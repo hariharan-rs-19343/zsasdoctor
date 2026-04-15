@@ -75,7 +75,8 @@ Force mode performs a full teardown and reinstall cycle:
 ## Install via Homebrew
 
 ```bash
-brew install https://raw.githubusercontent.com/hariharan-rs-19343/zsasdoctor/refs/heads/main/install/zsasdoctor.rb
+brew tap hariharan-rs-19343/zsasdoctor
+brew install zsasdoctor
 ```
 
 ## Run Tests
