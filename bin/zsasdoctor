@@ -136,11 +136,8 @@ Flags:
   -f, --force    Force reinstall even if already present
   --yes          Skip confirmation prompts (use with -f)
 
-Exit Codes:
-  0   All checks passed
-  1   Validation failed
-  2   Partial success (warnings only)
-  127 Dependency missing
+Author:
+  Hariharan R S <hariharan.rs@zohocorp.com>
 EOF
 }
 
