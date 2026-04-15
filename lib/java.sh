@@ -101,3 +101,96 @@ fix_java() {
     _stop_spinner
     task_pass "configured"
 }
+
+# ── Force ────────────────────────────────────────────────────
+force_java() {
+    task_start "Java (force)"
+    _stop_spinner
+
+    if ! command_exists brew; then
+        task_error_msg "Homebrew is required"
+        register_fail
+        task_fail
+        return 1
+    fi
+
+    # Detect current state
+    local current_version=""
+    local source="none"
+    if command_exists java; then
+        current_version="$(java -version 2>&1 | grep -oE '"[0-9]+' | tr -d '"' | head -1)"
+        [[ -z "$current_version" ]] && current_version="$(java -version 2>&1 | grep -oE '[0-9]+' | head -1)"
+        source="$(detect_install_source java)"
+        log_info "Detected Java ${current_version} (installed via ${source})"
+    else
+        log_info "No existing Java installation found"
+    fi
+
+    # Confirm
+    if ! confirm_action "This will remove existing Java and reinstall OpenJDK ${JAVA_RECOMMENDED_VERSION}"; then
+        log_info "Skipped"
+        return 0
+    fi
+
+    # Backup ~/.zshrc
+    backup_zshrc
+
+    # Uninstall based on source
+    if [[ "$source" == "brew" ]]; then
+        log_info "Uninstalling Java via Homebrew..."
+        # Remove all openjdk versions installed via brew
+        local formula
+        for formula in $(brew list --formula 2>/dev/null | grep -i "openjdk"); do
+            brew uninstall --ignore-dependencies "$formula" 2>/dev/null || true
+        done
+    elif [[ "$source" == "sdkman" ]]; then
+        log_info "Uninstalling Java via SDKMAN..."
+        if [[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]]; then
+            source "$HOME/.sdkman/bin/sdkman-init.sh"
+            sdk uninstall java 2>/dev/null || true
+        fi
+    elif [[ "$source" == "manual" ]]; then
+        log_info "Manual Java installation detected at $(command -v java)"
+        log_info "You may need to remove it from /Library/Java/JavaVirtualMachines manually"
+    fi
+
+    # Clean old JAVA_HOME entries from zshrc
+    remove_lines_from_file "JAVA_HOME" "$SHELL_PROFILE"
+
+    # Install fresh
+    log_info "Installing OpenJDK ${JAVA_RECOMMENDED_VERSION}..."
+    if ! brew install "openjdk@${JAVA_RECOMMENDED_VERSION}"; then
+        task_error_msg "Failed to install OpenJDK ${JAVA_RECOMMENDED_VERSION}"
+        register_fail
+        task_fail
+        return 1
+    fi
+
+    # Symlink for system java wrappers
+    local jdk_path
+    jdk_path="$(brew --prefix "openjdk@${JAVA_RECOMMENDED_VERSION}")/libexec/openjdk.jdk"
+    if [[ -d "$jdk_path" ]]; then
+        sudo ln -sfn "$jdk_path" "/Library/Java/JavaVirtualMachines/openjdk-${JAVA_RECOMMENDED_VERSION}.jdk" 2>/dev/null || true
+    fi
+
+    # Set fresh env vars in zshrc
+    local java_home_line="export JAVA_HOME=\$(/usr/libexec/java_home -v ${JAVA_RECOMMENDED_VERSION})"
+    local path_line='export PATH=$JAVA_HOME/bin:$PATH'
+    ensure_line_in_file "$java_home_line" "$SHELL_PROFILE"
+    ensure_line_in_file "$path_line" "$SHELL_PROFILE"
+
+    # Validate
+    export JAVA_HOME="$(/usr/libexec/java_home -v ${JAVA_RECOMMENDED_VERSION} 2>/dev/null)" || true
+    export PATH="$JAVA_HOME/bin:$PATH"
+
+    if command_exists java; then
+        local new_ver
+        new_ver="$(java -version 2>&1 | grep -oE '"[0-9]+' | tr -d '"' | head -1)"
+        register_pass
+        task_pass "Java ${new_ver}"
+    else
+        task_error_msg "Java not available after install"
+        register_fail
+        task_fail
+    fi
+}

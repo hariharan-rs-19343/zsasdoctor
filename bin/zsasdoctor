@@ -33,27 +33,58 @@ cmd_check() {
 }
 
 cmd_config() {
-    local target="${1:-}"
+    local target=""
+    local args=("$@")
+
+    # Parse flags
+    for arg in "${args[@]}"; do
+        case "$arg" in
+            -f|--force)  FORCE_MODE=1 ;;
+            --yes)       SKIP_CONFIRM=1 ;;
+            --*)         target="$arg" ;;
+        esac
+    done
+
+    if [[ -z "$target" ]]; then
+        printf "  ${_CLR_RED}✗${_CLR_RESET} No config target specified\n"
+        echo ""
+        echo "  Usage:"
+        echo "    zsasdoctor config [--auto|--java|--database|--ant|--intranet]"
+        echo "    zsasdoctor config -f --auto       Force reinstall all"
+        echo "    zsasdoctor config -f --java       Force reinstall Java"
+        echo "    zsasdoctor config -f --yes --auto Skip confirmations"
+        return "$EXIT_FAIL"
+    fi
 
     echo ""
-    printf "  ${_CLR_BOLD}${ZSASDOCTOR_NAME} v${ZSASDOCTOR_VERSION}${_CLR_RESET} ${_CLR_DIM}— Auto Configuration${_CLR_RESET}\n"
+    if (( FORCE_MODE )); then
+        printf "  ${_CLR_BOLD}${ZSASDOCTOR_NAME} v${ZSASDOCTOR_VERSION}${_CLR_RESET} ${_CLR_RED}${_CLR_BOLD}— Force Configuration${_CLR_RESET}\n"
+    else
+        printf "  ${_CLR_BOLD}${ZSASDOCTOR_NAME} v${ZSASDOCTOR_VERSION}${_CLR_RESET} ${_CLR_DIM}— Auto Configuration${_CLR_RESET}\n"
+    fi
     echo ""
 
     case "$target" in
         --auto)
-            fix_java
-            fix_database
-            fix_ant
+            if (( FORCE_MODE )); then
+                force_java
+                force_database
+                force_ant
+            else
+                fix_java
+                fix_database
+                fix_ant
+            fi
             check_intranet || fix_intranet
             ;;
         --java)
-            fix_java
+            if (( FORCE_MODE )); then force_java; else fix_java; fi
             ;;
         --database)
-            fix_database
+            if (( FORCE_MODE )); then force_database; else fix_database; fi
             ;;
         --ant)
-            fix_ant
+            if (( FORCE_MODE )); then force_ant; else fix_ant; fi
             ;;
         --intranet)
             fix_intranet
@@ -63,6 +94,7 @@ cmd_config() {
             echo ""
             echo "  Usage:"
             echo "    zsasdoctor config --auto        Run all fixes"
+            echo "    zsasdoctor config -f --auto     Force reinstall all"
             echo "    zsasdoctor config --java        Install/configure Java"
             echo "    zsasdoctor config --database    Install/configure database"
             echo "    zsasdoctor config --ant         Install/configure Ant"
@@ -87,14 +119,22 @@ Usage:
   zsasdoctor <command> [options]
 
 Commands:
-  check                  Validate local environment
-  config --auto          Auto-fix all issues
-  config --java          Install/configure Java
-  config --database      Install/configure database
-  config --ant           Install/configure Ant
-  config --intranet      Show intranet connectivity guidance
-  version                Print version
-  help                   Show this help
+  check                          Validate local environment
+  config --auto                  Auto-fix all issues
+  config --java                  Install/configure Java
+  config --database              Install/configure database
+  config --ant                   Install/configure Ant
+  config --intranet              Show intranet connectivity guidance
+  config -f --auto               Force reinstall all components
+  config -f --java               Force reinstall Java
+  config -f --database           Force reinstall database
+  config -f --ant                Force reinstall Ant
+  version                        Print version
+  help                           Show this help
+
+Flags:
+  -f, --force    Force reinstall even if already present
+  --yes          Skip confirmation prompts (use with -f)
 
 Exit Codes:
   0   All checks passed

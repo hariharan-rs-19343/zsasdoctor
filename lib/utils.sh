@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # utils.sh — Shared helpers for zsasdoctor
 
-# Global counters for final report
+# ── Global state ─────────────────────────────────────────────
 _PASS_COUNT=0
 _WARN_COUNT=0
 _FAIL_COUNT=0
+FORCE_MODE=0
+SKIP_CONFIRM=0
 
 register_pass()    { (( _PASS_COUNT++ )); }
 register_warning() { (( _WARN_COUNT++ )); }
@@ -30,6 +32,64 @@ ensure_line_in_file() {
         return 0   # added
     fi
     return 1       # already present
+}
+
+# Remove lines matching a pattern from a file.
+remove_lines_from_file() {
+    local pattern="$1"
+    local file="$2"
+    if [[ -f "$file" ]]; then
+        local tmp
+        tmp="$(mktemp)"
+        grep -v "$pattern" "$file" > "$tmp" || true
+        mv "$tmp" "$file"
+    fi
+}
+
+# Backup ~/.zshrc before force modifications.
+backup_zshrc() {
+    local backup="${SHELL_PROFILE}.zsasdoctor.bak"
+    if [[ -f "$SHELL_PROFILE" ]]; then
+        cp "$SHELL_PROFILE" "$backup"
+        log_info "Backed up ${SHELL_PROFILE} → ${backup}"
+    fi
+}
+
+# Prompt user for confirmation. Returns 0 if confirmed.
+# Skipped if SKIP_CONFIRM=1 (--yes flag).
+confirm_action() {
+    local message="$1"
+    if (( SKIP_CONFIRM )); then
+        return 0
+    fi
+    echo ""
+    printf "  ${_CLR_YELLOW}${_CLR_BOLD}⚠ %s${_CLR_RESET}\n" "$message"
+    local answer
+    read -rp "  Continue? (y/n): " answer
+    case "$answer" in
+        y|Y|yes|YES) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# Detect how a tool was installed (brew, manual, sdkman, unknown).
+detect_install_source() {
+    local cmd="$1"
+    local cmd_path
+    cmd_path="$(command -v "$cmd" 2>/dev/null)" || true
+
+    if [[ -z "$cmd_path" ]]; then
+        echo "none"
+        return
+    fi
+
+    if [[ "$cmd_path" == *"/homebrew/"* || "$cmd_path" == *"/opt/homebrew/"* || "$cmd_path" == *"/usr/local/Cellar/"* ]]; then
+        echo "brew"
+    elif [[ "$cmd_path" == *".sdkman"* ]]; then
+        echo "sdkman"
+    else
+        echo "manual"
+    fi
 }
 
 # Interactive radio-button selector.
