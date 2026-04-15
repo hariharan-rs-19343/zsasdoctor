@@ -20,9 +20,9 @@ source "$ROOT_DIR/lib/intranet.sh"
 # ── Commands ─────────────────────────────────────────────────
 
 cmd_check() {
-    echo "═══════════════════════════════════════════"
-    echo "  ${ZSASDOCTOR_NAME} v${ZSASDOCTOR_VERSION} — Environment Check"
-    echo "═══════════════════════════════════════════"
+    echo ""
+    printf "  ${_CLR_BOLD}${ZSASDOCTOR_NAME} v${ZSASDOCTOR_VERSION}${_CLR_RESET} ${_CLR_DIM}— Environment Check${_CLR_RESET}\n"
+    echo ""
 
     check_java      || true
     check_database   || true
@@ -35,9 +35,9 @@ cmd_check() {
 cmd_config() {
     local target="${1:-}"
 
-    echo "═══════════════════════════════════════════"
-    echo "  ${ZSASDOCTOR_NAME} v${ZSASDOCTOR_VERSION} — Auto Configuration"
-    echo "═══════════════════════════════════════════"
+    echo ""
+    printf "  ${_CLR_BOLD}${ZSASDOCTOR_NAME} v${ZSASDOCTOR_VERSION}${_CLR_RESET} ${_CLR_DIM}— Auto Configuration${_CLR_RESET}\n"
+    echo ""
 
     case "$target" in
         --auto)
@@ -59,14 +59,14 @@ cmd_config() {
             fix_intranet
             ;;
         *)
-            log_error "Unknown config target: ${target}"
+            printf "  ${_CLR_RED}✗${_CLR_RESET} Unknown config target: ${target}\n"
             echo ""
-            echo "Usage:"
-            echo "  zsasdoctor config --auto        Run all fixes"
-            echo "  zsasdoctor config --java        Install/configure Java"
-            echo "  zsasdoctor config --database    Install/configure database"
-            echo "  zsasdoctor config --ant         Install/configure Ant"
-            echo "  zsasdoctor config --intranet    Configure intranet access"
+            echo "  Usage:"
+            echo "    zsasdoctor config --auto        Run all fixes"
+            echo "    zsasdoctor config --java        Install/configure Java"
+            echo "    zsasdoctor config --database    Install/configure database"
+            echo "    zsasdoctor config --ant         Install/configure Ant"
+            echo "    zsasdoctor config --intranet    Configure intranet access"
             return "$EXIT_FAIL"
             ;;
     esac

@@ -93,16 +93,16 @@ radio_select() {
 # Print aggregated final status line
 print_final_status() {
     echo ""
-    echo "─────────────────────────────────────────"
+    printf "\n"
     if (( _FAIL_COUNT > 0 )); then
-        printf "Final Status: ${_CLR_RED}❌ FAILED${_CLR_RESET}  "
+        printf "  ${_CLR_RED}${_CLR_BOLD}✗ FAILED${_CLR_RESET}  "
     elif (( _WARN_COUNT > 0 )); then
-        printf "Final Status: ${_CLR_YELLOW}⚠  PARTIAL${_CLR_RESET}  "
+        printf "  ${_CLR_YELLOW}${_CLR_BOLD}! PARTIAL${_CLR_RESET}  "
     else
-        printf "Final Status: ${_CLR_GREEN}✅ PASSED${_CLR_RESET}  "
+        printf "  ${_CLR_GREEN}${_CLR_BOLD}✓ Great! Your system environment is ready for development.${_CLR_RESET}  "
     fi
-    echo "(${_PASS_COUNT} passed, ${_WARN_COUNT} warnings, ${_FAIL_COUNT} errors)"
-    echo "─────────────────────────────────────────"
+    printf "${_CLR_DIM}(%d passed, %d warnings, %d errors)${_CLR_RESET}\n" "$_PASS_COUNT" "$_WARN_COUNT" "$_FAIL_COUNT"
+    printf "\n"
 
     if (( _FAIL_COUNT > 0 )); then
         return "$EXIT_FAIL"

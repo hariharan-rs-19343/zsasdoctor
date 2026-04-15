@@ -3,61 +3,61 @@
 
 # ── Check ────────────────────────────────────────────────────
 check_ant() {
-    log_section "Ant Check"
+    task_start "Ant"
 
     if ! command_exists ant; then
-        log_error "Apache Ant is not installed"
+        task_error_msg "Apache Ant is not installed"
         register_fail
+        task_fail
         return 1
     fi
 
-    local ant_version_output
-    ant_version_output="$(ant -version 2>&1)"
-    log_success "Ant installed — ${ant_version_output}"
     register_pass
 
-    # Check that ant is available on PATH
+    # Check PATH
     local ant_path
     ant_path="$(which ant 2>/dev/null)"
-    if [[ -n "$ant_path" ]]; then
-        log_success "Ant on PATH: ${ant_path}"
-        register_pass
-    else
-        log_warning "Ant not found on PATH"
+    if [[ -z "$ant_path" ]]; then
+        task_error_msg "Ant not found on PATH"
         register_warning
+        task_warn
+        return 0
     fi
 
-    # Check for ANT_HOME or ant reference in shell profile
-    if grep -qE "ANT_HOME|ant" "$SHELL_PROFILE" 2>/dev/null; then
-        log_success "Ant referenced in ${SHELL_PROFILE}"
-    else
-        log_warning "Ant not declared in ${SHELL_PROFILE}"
+    # Check shell profile
+    if ! grep -qE "ANT_HOME|ant" "$SHELL_PROFILE" 2>/dev/null; then
+        task_error_msg "Ant not declared in ${SHELL_PROFILE}"
         register_warning
+        task_warn
+        return 0
     fi
+
+    task_pass "$(ant -version 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')"
 }
 
 # ── Fix ──────────────────────────────────────────────────────
 fix_ant() {
-    log_section "Ant Auto-Configuration"
+    task_start "Ant"
 
     if ! command_exists brew; then
-        log_error "Homebrew is required to auto-install Ant"
+        task_error_msg "Homebrew is required to auto-install Ant"
         register_fail
+        task_fail
         return 1
     fi
 
     if ! command_exists ant; then
+        _stop_spinner
         log_info "Installing Apache Ant via Homebrew..."
-        if brew install ant; then
-            log_success "Apache Ant installed"
-            register_pass
-        else
-            log_error "Failed to install Apache Ant"
+        if ! brew install ant; then
+            task_error_msg "Failed to install Apache Ant"
             register_fail
+            task_fail
             return 1
         fi
-    else
-        log_success "Ant already installed"
-        register_pass
     fi
+
+    register_pass
+    _stop_spinner
+    task_pass "configured"
 }
