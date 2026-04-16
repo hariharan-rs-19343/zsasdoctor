@@ -79,15 +79,23 @@ cmd_config() {
             ;;
         --java)
             if (( FORCE_MODE )); then force_java; else fix_java; fi
+            print_final_status "Java"
+            return $?
             ;;
         --database)
             if (( FORCE_MODE )); then force_database; else fix_database; fi
+            print_final_status "Database"
+            return $?
             ;;
         --ant)
             if (( FORCE_MODE )); then force_ant; else fix_ant; fi
+            print_final_status "Ant"
+            return $?
             ;;
         --intranet)
             fix_intranet
+            print_final_status "Intranet"
+            return $?
             ;;
         *)
             printf "  ${_CLR_RED}✗${_CLR_RESET} Unknown config target: ${target}\n"

@@ -150,14 +150,20 @@ radio_select() {
     eval "$_result_var=$current"
 }
 
-# Print aggregated final status line
+# Print aggregated final status line.
+# Usage: print_final_status [task_name]
+#   If task_name is given, shows "Successfully, configured <task>" on success.
+#   Otherwise shows the generic environment-ready message.
 print_final_status() {
+    local task_name="${1:-}"
     echo ""
     printf "\n"
     if (( _FAIL_COUNT > 0 )); then
         printf "  ${_CLR_RED}${_CLR_BOLD}✗ FAILED${_CLR_RESET}  "
     elif (( _WARN_COUNT > 0 )); then
         printf "  ${_CLR_YELLOW}${_CLR_BOLD}! PARTIAL${_CLR_RESET}  "
+    elif [[ -n "$task_name" ]]; then
+        printf "  ${_CLR_GREEN}${_CLR_BOLD}✓ Successfully, configured %s${_CLR_RESET}  " "$task_name"
     else
         printf "  ${_CLR_GREEN}${_CLR_BOLD}✓ Great! Your system environment is ready for development.${_CLR_RESET}  "
     fi

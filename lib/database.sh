@@ -5,60 +5,52 @@
 check_database() {
     task_start "Database"
 
-    local found_any=0
     local detail_parts=()
+    local has_valid=0
 
     # ── PostgreSQL ───────────────────────────────────────────
     if command_exists psql; then
-        found_any=1
         local pg_major
         pg_major="$(extract_major_version "$(psql --version 2>&1)")"
 
         if [[ -n "$pg_major" ]] && (( pg_major >= POSTGRES_MIN_VERSION )); then
             detail_parts+=("PostgreSQL ${pg_major}")
+            has_valid=1
             register_pass
         elif [[ -n "$pg_major" ]]; then
             task_error_msg "PostgreSQL ${pg_major} — required >= ${POSTGRES_MIN_VERSION}"
-            register_fail
-        else
-            task_error_msg "Unable to determine PostgreSQL version"
-            register_fail
         fi
     fi
 
     # ── MySQL ────────────────────────────────────────────────
     if command_exists mysql; then
-        found_any=1
         local my_major
         my_major="$(extract_major_version "$(mysql --version 2>&1)")"
 
         if [[ -n "$my_major" ]] && (( my_major >= MYSQL_MIN_VERSION && my_major <= MYSQL_MAX_VERSION )); then
             detail_parts+=("MySQL ${my_major}")
+            has_valid=1
             register_pass
         elif [[ -n "$my_major" ]]; then
             task_error_msg "MySQL ${my_major} — required ${MYSQL_MIN_VERSION}–${MYSQL_MAX_VERSION}"
-            register_fail
-        else
-            task_error_msg "Unable to determine MySQL version"
-            register_fail
         fi
     fi
 
-    if (( ! found_any )); then
+    # At least one valid database is enough
+    if (( has_valid )); then
+        local detail
+        detail="$(IFS=', '; echo "${detail_parts[*]}")"
+        task_pass "$detail"
+        return 0
+    fi
+
+    # No valid database at all
+    if (( ${#_TASK_ERRORS[@]} == 0 )); then
         task_error_msg "No database (PostgreSQL or MySQL) found"
-        register_fail
-        task_fail
-        return 1
     fi
-
-    if (( ${#_TASK_ERRORS[@]} > 0 )); then
-        task_fail
-        return 1
-    fi
-
-    local detail
-    detail="$(IFS=', '; echo "${detail_parts[*]}")"
-    task_pass "$detail"
+    register_fail
+    task_fail
+    return 1
 }
 
 # ── Fix ──────────────────────────────────────────────────────
