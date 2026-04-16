@@ -2,7 +2,7 @@
 # constants.sh — Central configuration for zsasdoctor
 
 # ── Tool metadata ────────────────────────────────────────────
-ZSASDOCTOR_VERSION="1.0.0"
+ZSASDOCTOR_VERSION="1.0.1"
 ZSASDOCTOR_NAME="zsasdoctor"
 
 # ── Java constraints ─────────────────────────────────────────

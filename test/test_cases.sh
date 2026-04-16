@@ -37,7 +37,7 @@ echo "════════════════════════�
 echo ""
 echo "▸ version command"
 
-run_test "version outputs version string" bash -c "$BIN version | grep -q 'v1.0.0'"
+run_test "version outputs version string" bash -c "$BIN version | grep -q 'v1.0.1'"
 
 # -- Help command --
 echo ""
